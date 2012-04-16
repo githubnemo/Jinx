@@ -27,6 +27,8 @@ func main() {
 
 	loadTextures()
 
+	loadLevel()
+
 	gameloop(screen)
 }
 
@@ -80,8 +82,8 @@ func (gc *GameContext) drawFloor() {
 
 func (gc *GameContext) drawPlayer() {
 	destRect := &sdl.Rect{
-			int16(gc.PagePosition),
-			int16(floorTexture.H),
+			int16(320 - playerTexture.W/2),
+			int16(480 - floorTexture.H - playerTexture.H),
 			uint16(playerTexture.W),
 			uint16(playerTexture.H),
 		}
@@ -95,6 +97,15 @@ func (gc *GameContext) drawPlayer() {
 }
 
 
+func (gc *GameContext) drawObjects() {
+	objects := findLevelObjects(gc.PlayerPosition)
+
+	for _,obj := range objects {
+		obj.Draw(gc.Screen, gc)
+	}
+}
+
+
 // Return width of the player in pixel
 func (gc *GameContext) PlayerWidth() int {
 	return int(playerTexture.W)
@@ -105,6 +116,7 @@ func (gc *GameContext) resetPlayerSpeed() {
 	gc.PlayerSpeed = 1
 }
 
+
 const MAX_PLAYER_SPEED = 16
 
 // Increases speed to a max. value for each call and returns
@@ -113,7 +125,7 @@ func (gc *GameContext) computePlayerSpeed() int {
 	if(gc.PlayerSpeed >= MAX_PLAYER_SPEED) {
 		gc.PlayerSpeed = MAX_PLAYER_SPEED
 	} else {
-		gc.PlayerSpeed ++
+		gc.PlayerSpeed++
 	}
 
 	return gc.PlayerSpeed
@@ -141,7 +153,6 @@ func (gc *GameContext) moveRight() {
 	if(gc.PagePosition + gc.PlayerWidth() > 640) {
 		gc.PagePosition = 640 - gc.PlayerWidth()
 	}
-
 }
 
 
@@ -161,6 +172,7 @@ func gameloop(screen *sdl.Surface) {
 
 		gc.drawFloor()
 		gc.drawPlayer()
+		gc.drawObjects()
 
 		switch re := e.(type) {
 			case *sdl.QuitEvent:
