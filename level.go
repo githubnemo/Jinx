@@ -2,7 +2,6 @@ package main
 
 import "github.com/banthar/Go-SDL/sdl"
 
-
 type Object struct {
 	sdl.Rect
 
@@ -10,7 +9,7 @@ type Object struct {
 }
 
 func (o *Object) Draw(surface *sdl.Surface, gc *GameContext) {
-	windowStartX := int16((gc.PlayerPosition % 641) - 320)
+	windowStartX := int16(gc.PlayerPosition - 320)
 
 	// "move" the object according to the window
 	drawRect := &sdl.Rect{
