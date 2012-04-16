@@ -21,6 +21,8 @@ func main() {
 
 	sdl.WM_SetCaption("Ohai","")
 
+	sdl.EnableKeyRepeat(20, 20)
+
 	fmt.Println("Launching mainloop")
 
 	loadTextures()
@@ -44,7 +46,6 @@ type GameContext struct {
 	PlayerPosition	int	// Global position (advanced by each step)
 	PagePosition	int	// Relative to the page (0-640)
 	PlayerSpeed		int
-	PageCount		int	// count for every passed page
 }
 
 
@@ -78,20 +79,17 @@ func (gc *GameContext) drawFloor() {
 
 
 func (gc *GameContext) drawPlayer() {
-	gc.Screen.FillRect(&sdl.Rect{
+	destRect := &sdl.Rect{
 			int16(gc.PagePosition),
 			int16(floorTexture.H),
 			uint16(playerTexture.W),
 			uint16(playerTexture.H),
-		}, 0xaaaaaa)
+		}
+
+	gc.Screen.FillRect(destRect, 0xaaaaaa)
 
 	gc.Screen.Blit(
-		&sdl.Rect{
-			int16(gc.PagePosition),
-			int16(floorTexture.H),
-			0,
-			0,
-		},
+		destRect,
 		playerTexture,
 		nil)
 }
@@ -103,9 +101,28 @@ func (gc *GameContext) PlayerWidth() int {
 }
 
 
+func (gc *GameContext) resetPlayerSpeed() {
+	gc.PlayerSpeed = 1
+}
+
+const MAX_PLAYER_SPEED = 16
+
+// Increases speed to a max. value for each call and returns
+// current speed.
+func (gc *GameContext) computePlayerSpeed() int {
+	if(gc.PlayerSpeed >= MAX_PLAYER_SPEED) {
+		gc.PlayerSpeed = MAX_PLAYER_SPEED
+	} else {
+		gc.PlayerSpeed ++
+	}
+
+	return gc.PlayerSpeed
+}
+
+
 func (gc *GameContext) moveLeft() {
-	gc.PlayerPosition -= gc.PlayerSpeed
-	gc.PagePosition -= gc.PlayerSpeed
+	gc.PlayerPosition -= gc.computePlayerSpeed()
+	gc.PagePosition -= gc.computePlayerSpeed()
 
 	if(gc.PagePosition - gc.PlayerWidth() < 0) {
 		gc.PagePosition = 0 + gc.PlayerWidth()
@@ -118,16 +135,13 @@ func (gc *GameContext) moveLeft() {
 
 
 func (gc *GameContext) moveRight() {
-	gc.PlayerPosition += gc.PlayerSpeed
-	gc.PagePosition += gc.PlayerSpeed
+	gc.PlayerPosition += gc.computePlayerSpeed()
+	gc.PagePosition += gc.computePlayerSpeed()
 
 	if(gc.PagePosition + gc.PlayerWidth() > 640) {
 		gc.PagePosition = 640 - gc.PlayerWidth()
 	}
 
-	if(gc.PlayerPosition > 0 && gc.PlayerPosition % 640 == 0) {
-		gc.PageCount++
-	}
 }
 
 
@@ -138,7 +152,7 @@ func (gc *GameContext) Dump() {
 
 
 func gameloop(screen *sdl.Surface) {
-	gc := &GameContext{screen, 320, 320, 16, 0}
+	gc := &GameContext{screen, 320, 320, 16}
 
 	for {
 		e := sdl.WaitEvent()
@@ -167,7 +181,7 @@ func gameloop(screen *sdl.Surface) {
 				fmt.Println(re.X, re.Y)
 
 			case *sdl.KeyboardEvent:
-				if(re.Type == sdl.KEYUP) {
+				if(re.Type == sdl.KEYDOWN) {
 					keyname := sdl.GetKeyName(sdl.Key(re.Keysym.Sym))
 					fmt.Println("pressed:", keyname)
 
@@ -175,6 +189,8 @@ func gameloop(screen *sdl.Surface) {
 						case "right": gc.moveRight()
 						case "left": gc.moveLeft()
 					}
+				} else if(re.Type == sdl.KEYUP) {
+					gc.resetPlayerSpeed()
 				}
 			default:
 				//fmt.Println("What the heck?!")
@@ -186,3 +202,9 @@ func gameloop(screen *sdl.Surface) {
 	}
 }
 
+/*
+* Problems:
+* While holding 'right' and pressing up, the 'right' event is not triggered
+* anymore.
+ *
+ */
