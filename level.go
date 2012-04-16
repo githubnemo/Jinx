@@ -10,10 +10,11 @@ type Object struct {
 }
 
 func (o *Object) Draw(surface *sdl.Surface, gc *GameContext) {
-	baseX := int16((gc.PlayerPosition % 641) - 320)
+	windowStartX := int16((gc.PlayerPosition % 641) - 320)
 
+	// "move" the object according to the window
 	drawRect := &sdl.Rect{
-		X: o.Rect.X - baseX,
+		X: o.Rect.X - windowStartX,
 		Y: o.Rect.Y,
 		W: o.Rect.W,
 		H: o.Rect.H,
@@ -22,13 +23,15 @@ func (o *Object) Draw(surface *sdl.Surface, gc *GameContext) {
 	surface.FillRect(drawRect, o.Color)
 }
 
+func (o *Object) InRange(ppos int) bool {
+	return o.X + int16(o.W) >= int16(ppos-320) && o.X <= int16(ppos+320)
+}
+
 
 var levelObjects []*Object
 
 
-func inRange(o *Object, ppos int) bool {
-	return o.X + int16(o.W) >= int16(ppos-320) && o.X <= int16(ppos+320)
-}
+
 
 
 // Returns all level objects which are in range of the player, that is
@@ -37,7 +40,7 @@ func findLevelObjects(playerPosition int) []*Object {
 	foundObjects := make([]*Object, 0, len(levelObjects))
 
 	for _,e := range levelObjects {
-		if inRange(e, playerPosition) {
+		if e.InRange(playerPosition) {
 			foundObjects = append(foundObjects, e)
 		}
 	}
