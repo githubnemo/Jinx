@@ -27,7 +27,7 @@ var levelObjects []*Object
 
 
 func inRange(o *Object, ppos int) bool {
-	return o.X >= int16(ppos-320) && o.X <= int16(ppos+320)
+	return o.X + int16(o.W) >= int16(ppos-320) && o.X <= int16(ppos+320)
 }
 
 
