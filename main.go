@@ -44,13 +44,22 @@ type GameContext struct {
 	PlayerPosition	int	// Global position (advanced by each step)
 	PagePosition	int	// Relative to the page (0-640)
 	PlayerSpeed		int
+	PageCount		int	// count for every passed page
 }
 
 
 func (gc *GameContext) drawFloor() {
+	offset := 320 - (gc.PlayerPosition % 641)
 
 	destRect := &sdl.Rect{
+		int16(-320 + offset),
+		int16(480 - floorTexture.H),
 		0,
+		0,
+	}
+
+	destRect2 := &sdl.Rect{
+		int16(320 + offset),
 		int16(480 - floorTexture.H),
 		0,
 		0,
@@ -61,13 +70,6 @@ func (gc *GameContext) drawFloor() {
 		floorTexture,
 		nil)
 
-	destRect2 := &sdl.Rect{
-		0,
-		int16(480 - floorTexture.H),
-		0,
-		0,
-	}
-
 	gc.Screen.Blit(
 		destRect2,
 		floorTexture,
@@ -76,6 +78,13 @@ func (gc *GameContext) drawFloor() {
 
 
 func (gc *GameContext) drawPlayer() {
+	gc.Screen.FillRect(&sdl.Rect{
+			int16(gc.PagePosition),
+			int16(floorTexture.H),
+			uint16(playerTexture.W),
+			uint16(playerTexture.H),
+		}, 0xaaaaaa)
+
 	gc.Screen.Blit(
 		&sdl.Rect{
 			int16(gc.PagePosition),
@@ -88,17 +97,22 @@ func (gc *GameContext) drawPlayer() {
 }
 
 
+// Return width of the player in pixel
+func (gc *GameContext) PlayerWidth() int {
+	return int(playerTexture.W)
+}
+
 
 func (gc *GameContext) moveLeft() {
-	if(gc.PlayerPosition == 0) {
-		return
-	}
-
 	gc.PlayerPosition -= gc.PlayerSpeed
 	gc.PagePosition -= gc.PlayerSpeed
 
-	if(gc.PagePosition < 0) {
-		gc.PagePosition = 0
+	if(gc.PagePosition - gc.PlayerWidth() < 0) {
+		gc.PagePosition = 0 + gc.PlayerWidth()
+	}
+
+	if(gc.PlayerPosition < 0) {
+		gc.PlayerPosition = 0
 	}
 }
 
@@ -107,16 +121,24 @@ func (gc *GameContext) moveRight() {
 	gc.PlayerPosition += gc.PlayerSpeed
 	gc.PagePosition += gc.PlayerSpeed
 
-	if(gc.PagePosition > 640) {
-		gc.PagePosition = 0
+	if(gc.PagePosition + gc.PlayerWidth() > 640) {
+		gc.PagePosition = 640 - gc.PlayerWidth()
+	}
+
+	if(gc.PlayerPosition > 0 && gc.PlayerPosition % 640 == 0) {
+		gc.PageCount++
 	}
 }
 
 
+func (gc *GameContext) Dump() {
+	fmt.Println("PlayerPos:", gc.PlayerPosition, "PagePos:", gc.PagePosition)
+}
+
 
 
 func gameloop(screen *sdl.Surface) {
-	gc := &GameContext{screen, 320, 320, 16}
+	gc := &GameContext{screen, 320, 320, 16, 0}
 
 	for {
 		e := sdl.WaitEvent()
@@ -157,6 +179,8 @@ func gameloop(screen *sdl.Surface) {
 			default:
 				//fmt.Println("What the heck?!")
 		}
+
+		gc.Dump()
 
 		screen.Flip()
 	}
