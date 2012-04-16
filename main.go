@@ -46,7 +46,6 @@ type GameContext struct {
 	Screen	*sdl.Surface
 
 	PlayerPosition	int	// Global position (advanced by each step)
-	PagePosition	int	// Relative to the page (0-640)
 	PlayerSpeed		int
 }
 
@@ -134,11 +133,6 @@ func (gc *GameContext) computePlayerSpeed() int {
 
 func (gc *GameContext) moveLeft() {
 	gc.PlayerPosition -= gc.computePlayerSpeed()
-	gc.PagePosition -= gc.computePlayerSpeed()
-
-	if(gc.PagePosition - gc.PlayerWidth() < 0) {
-		gc.PagePosition = 0 + gc.PlayerWidth()
-	}
 
 	if(gc.PlayerPosition < 0) {
 		gc.PlayerPosition = 0
@@ -148,22 +142,17 @@ func (gc *GameContext) moveLeft() {
 
 func (gc *GameContext) moveRight() {
 	gc.PlayerPosition += gc.computePlayerSpeed()
-	gc.PagePosition += gc.computePlayerSpeed()
-
-	if(gc.PagePosition + gc.PlayerWidth() > 640) {
-		gc.PagePosition = 640 - gc.PlayerWidth()
-	}
 }
 
 
 func (gc *GameContext) Dump() {
-	fmt.Println("PlayerPos:", gc.PlayerPosition, "PagePos:", gc.PagePosition)
+	fmt.Println("PlayerPos:", gc.PlayerPosition)
 }
 
 
 
 func gameloop(screen *sdl.Surface) {
-	gc := &GameContext{screen, 320, 320, 16}
+	gc := &GameContext{screen, 320, 16}
 
 	for {
 		e := sdl.WaitEvent()
