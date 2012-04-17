@@ -189,6 +189,7 @@ func gameloop(screen *sdl.Surface) {
 					switch keyname {
 						case "right": gc.moveRight()
 						case "left": gc.moveLeft()
+						case "q": return
 					}
 				} else if(re.Type == sdl.KEYUP) {
 					gc.resetPlayerSpeed()
